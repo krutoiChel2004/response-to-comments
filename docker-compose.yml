@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  getbit-reply-bot:
+    build: .
+    container_name: getbit-reply-bot
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - EXCHANGER_NAME=${EXCHANGER_NAME_GB}
+      - USERNAME=${USERNAME_GB}
+      - PASSWORD=${PASSWORD_GB}
+      - ADMIN_URL=${ADMIN_URL}
+      - REVIEWS_URL=${REVIEWS_URL}
+      - HEADLESS=${HEADLESS}
+    volumes:
+      - ./config.py:/app/config.py
+      - ./logs:/app/logs
+    networks:
+      - bot-network
+
+  bitbuy-reply-bot:
+    build: .
+    container_name: bitbuy-reply-bot
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - EXCHANGER_NAME=${EXCHANGER_NAME_BB}
+      - USERNAME=${USERNAME_BB}
+      - PASSWORD=${PASSWORD_BB}
+      - ADMIN_URL=${ADMIN_URL}
+      - REVIEWS_URL=${REVIEWS_URL}
+      - HEADLESS=${HEADLESS}
+    volumes:
+      - ./config.py:/app/config.py
+      - ./logs:/app/logs
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge
