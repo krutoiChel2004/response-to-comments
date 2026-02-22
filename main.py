@@ -30,14 +30,18 @@ async def login_to_bestchange(page, username, password):
     # Нажимаем кнопку Login
     login_button = await page.query_selector('input[type="submit"][value="Login"]')
     if login_button:
-        await login_button.click()
-        print("Кнопка Login нажата")
+        # Используем expect_navigation чтобы обработать редирект правильно
+        try:
+            async with page.expect_navigation(wait_until="domcontentloaded", timeout=60000):
+                await login_button.click(timeout=5000)
+            print("Кнопка Login нажата и редирект завершен")
+        except Exception as e:
+            print(f"Ошибка при клике на Login: {e}")
+            # Даже если навигация не прошла, пробуем дождаться загрузки
+            await page.wait_for_timeout(3000)
     else:
         print("Кнопка Login не найдена!")
         return False
-    
-    # Ждем перехода и загрузки страницы после входа
-    await page.wait_for_timeout(3000)  # Даем время на редирект
     
     # Проверяем, успешен ли вход
     current_url = page.url
@@ -50,38 +54,45 @@ async def login_to_bestchange(page, username, password):
 
 async def find_reviews_without_reply(page):
     """
-    Находит ID отзывов БЕЗ ответа до первого отзыва, у которого уже есть ответ.
+    Находит ID положительных отзывов БЕЗ ответа до первого отзыва, у которого уже есть ответ.
     Останавливается при встречении первого отзыва с ответом.
     Возвращает словарь с отзывами и флагом о найденном ответленном отзыве.
     """
-    print("\nИщем отзывы без ответов до первого ответленного отзыва...")
+    print("\nИщем положительные отзывы без ответов...")
     
     # Ждем загрузки таблицы с отзывами
-    await page.wait_for_selector('[id^="reviewmanage"]', timeout=10000, state="attached")
+    await page.wait_for_selector('[id^="reviewtext"]', timeout=10000, state="attached")
     
-    # Находим все строки управления отзывами
-    review_manage_elements = await page.query_selector_all('[id^="reviewmanage"]')
+    # Находим все строки с текстом отзывов
+    review_text_elements = await page.query_selector_all('[id^="reviewtext"]')
     
-    if not review_manage_elements:
+    if not review_text_elements:
         print("Не найдено ни одного отзыва на странице!")
         return {'reviews': [], 'found_answered_review': False}
     
-    print(f"Найдено {len(review_manage_elements)} отзывов на странице")
+    print(f"Найдено {len(review_text_elements)} отзывов на странице")
     
     reviews_without_reply = []
     found_answered_review = False
     
-    for manage_element in review_manage_elements:
-        # Получаем ID элемента, например "reviewmanage3694215"
-        manage_element_id = await manage_element.get_attribute('id')
-        if not manage_element_id:
+    for review_text_element in review_text_elements:
+        # Получаем тип отзыва из атрибута title
+        review_type = await review_text_element.get_attribute('title')
+        
+        # Пропускаем если это не положительный отзыв
+        if review_type != "Положительный отзыв":
+            continue
+        
+        # Получаем ID элемента, например "reviewtext3697926"
+        review_text_id = await review_text_element.get_attribute('id')
+        if not review_text_id:
             continue
             
         # Извлекаем числовой ID отзыва
-        review_id = manage_element_id.replace('reviewmanage', '')
+        review_id = review_text_id.replace('reviewtext', '')
         
-        # Ищем внутри этого элемента span со счетчиком комментариев
-        comment_count_span = await manage_element.query_selector(f'[id="commentcount{review_id}"]')
+        # Ищем span со счетчиком комментариев
+        comment_count_span = await page.query_selector(f'[id="commentcount{review_id}"]')
         
         if comment_count_span:
             # Проверяем, скрыт ли элемент (display: none)
@@ -89,7 +100,7 @@ async def find_reviews_without_reply(page):
             
             if not is_visible:
                 # Если элемент скрыт, значит комментариев нет
-                print(f"✓ Отзыв ID {review_id} - БЕЗ ОТВЕТА")
+                print(f"✓ Положительный отзыв ID {review_id} - БЕЗ ОТВЕТА")
                 reviews_without_reply.append({
                     'id': review_id,
                     'url': f"https://www.bestchange.ru/getbit-exchanger.html?review={review_id}"
@@ -97,12 +108,12 @@ async def find_reviews_without_reply(page):
             else:
                 # Элемент видим, значит есть комментарий
                 count_text = await comment_count_span.text_content()
-                print(f"⏹️  Отзыв ID {review_id} - уже есть ответ ({count_text})")
+                print(f"⏹️  Положительный отзыв ID {review_id} - уже есть ответ ({count_text})")
                 print("Останавливаемся - остальные отзывы уже ответленные")
                 found_answered_review = True
                 break
     
-    print(f"\n📊 Всего найдено новых отзывов без ответа: {len(reviews_without_reply)}")
+    print(f"\n📊 Всего найдено новых положительных отзывов без ответа: {len(reviews_without_reply)}")
     return {'reviews': reviews_without_reply, 'found_answered_review': found_answered_review}
 
 async def main():
