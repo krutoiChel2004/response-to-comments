@@ -117,6 +117,10 @@ async def find_reviews_without_reply(page):
     return {'reviews': reviews_without_reply, 'found_answered_review': found_answered_review}
 
 async def main():
+    # Список для отслеживания неиспользованных шаблонов
+    available_templates = REPLY_TEMPLATES.copy()
+    random.shuffle(available_templates)  # Перемешиваем для случайного порядка
+    
     async with async_playwright() as p:
         # Запускаем браузер
         browser = await p.chromium.launch(headless=HEADLESS)
@@ -164,8 +168,17 @@ async def main():
                         await page.click(f'[onclick="return replyform({review_id})"]')
                         await page.wait_for_timeout(500)  # Ждем анимации
                         
-                        # Заполняем текст ответа (случайный из шаблонов)
-                        reply_text = random.choice(REPLY_TEMPLATES).format(exchanger_name=EXCHANGER_NAME)
+                        # Выбираем шаблон из неиспользованных
+                        if not available_templates:
+                            # Если все шаблоны использованы, сбрасываем список
+                            available_templates = REPLY_TEMPLATES.copy()
+                            random.shuffle(available_templates)
+                            print("  🔄 Все шаблоны использованы, сбрасываем список")
+                        
+                        # Берем и удаляем первый шаблон из списка
+                        reply_template = available_templates.pop(0)
+                        reply_text = reply_template.format(exchanger_name=EXCHANGER_NAME)
+                        print(f"  📝 Использовано шаблонов: {len(REPLY_TEMPLATES) - len(available_templates)}/{len(REPLY_TEMPLATES)}")
                         
                         await page.fill(f'#replytext{review_id}', reply_text)
                         print(f"  Текст ответа заполнен")
