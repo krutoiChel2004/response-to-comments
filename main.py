@@ -3,6 +3,17 @@ import random
 from playwright.async_api import async_playwright
 from config import USERNAME, PASSWORD, EXCHANGER_NAME, ADMIN_URL, REVIEWS_URL, REPLY_TEMPLATES, HEADLESS
 
+
+def build_review_url(review_id):
+    """
+    Формирует ссылку на отзыв на основе REVIEWS_URL из .env
+    """
+    if not REVIEWS_URL:
+        return None
+
+    separator = '&' if '?' in REVIEWS_URL else '?'
+    return f"{REVIEWS_URL}{separator}review={review_id}"
+
 async def login_to_bestchange(page, username, password):
     """
     Выполняет вход в админ-панель BestChange
@@ -103,7 +114,7 @@ async def find_reviews_without_reply(page):
                 print(f"✓ Положительный отзыв ID {review_id} - БЕЗ ОТВЕТА")
                 reviews_without_reply.append({
                     'id': review_id,
-                    'url': f"https://www.bestchange.ru/getbit-exchanger.html?review={review_id}"
+                    'url': build_review_url(review_id)
                 })
             else:
                 # Элемент видим, значит есть комментарий

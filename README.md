@@ -1,11 +1,10 @@
 # Response to Comments
 
-Бот на Python + Playwright для автоматических ответов на положительные отзывы в админке обменника. Проект запускается через Docker Compose и может поднимать сразу два контейнера:
+Бот на Python + Playwright для автоматических ответов на положительные отзывы в админке обменника. Проект запускается через Docker Compose и поднимает один контейнер:
 
-- `ex1-reply-bot`
-- `ex2-reply-bot`
+- `reply-bot`
 
-Оба сервиса используют один и тот же код, но берут разные учетные данные и названия обменников из переменных окружения.
+Сервис берет учетные данные и название обменника из переменных окружения.
 
 ## Что делает бот
 
@@ -70,15 +69,9 @@ ADMIN_URL=https://example.com/admin/login
 REVIEWS_URL=https://example.com/reviews
 HEADLESS=True
 
-# ex1
-EXCHANGER_NAME_GB=GetBit
-USERNAME_GB=your_ex1_login
-PASSWORD_GB=your_ex1_password
-
-# ex2
-EXCHANGER_NAME_BB=BitBuy
-USERNAME_BB=your_ex2_login
-PASSWORD_BB=your_ex2_password
+EXCHANGER_NAME=ex1
+USERNAME=your_ex1_login
+PASSWORD=your_ex1_password
 ```
 
 ### Назначение переменных
@@ -89,19 +82,11 @@ PASSWORD_BB=your_ex2_password
 - `REVIEWS_URL` — страница со списком отзывов.
 - `HEADLESS` — запуск браузера без интерфейса. Для Docker обычно должно быть `True`.
 
-#### Для сервиса `getbit-reply-bot`
+#### Для сервиса `reply-bot`
 
-- `EXCHANGER_NAME_GB` — имя обменника, подставляется в текст ответа.
-- `USERNAME_GB` — логин от админки.
-- `PASSWORD_GB` — пароль от админки.
-
-#### Для сервиса `bitbuy-reply-bot`
-
-- `EXCHANGER_NAME_BB` — имя второго обменника.
-- `USERNAME_BB` — логин от админки.
-- `PASSWORD_BB` — пароль от админки.
-
-> Если нужен только один бот, второй сервис можно не запускать. Но переменные, используемые запускаемым сервисом, должны быть заполнены обязательно.
+- `EXCHANGER_NAME` — имя обменника, подставляется в текст ответа.
+- `USERNAME` — логин от админки.
+- `PASSWORD` — пароль от админки.
 
 ---
 
@@ -136,7 +121,7 @@ docker compose up --build -d
 - соберет Docker image;
 - установит Python-зависимости;
 - установит Chromium для Playwright;
-- поднимет контейнеры в фоне.
+- поднимет контейнер в фоне.
 
 Если нужен запуск в активной консоли, без фона:
 
@@ -146,7 +131,7 @@ docker compose up --build
 
 ---
 
-## 6. Проверка, что контейнеры запустились
+## 6. Проверка, что контейнер запустился
 
 Посмотреть список контейнеров:
 
@@ -154,22 +139,16 @@ docker compose up --build
 docker compose ps
 ```
 
-Посмотреть логи всех сервисов:
+Посмотреть логи сервиса:
 
 ```bash
 docker compose logs -f
 ```
 
-Посмотреть логи только `getbit-reply-bot`:
+Посмотреть логи только `reply-bot`:
 
 ```bash
-docker compose logs -f getbit-reply-bot
-```
-
-Посмотреть логи только `bitbuy-reply-bot`:
-
-```bash
-docker compose logs -f bitbuy-reply-bot
+docker compose logs -f reply-bot
 ```
 
 Если все настроено правильно, в логах будут сообщения о переходе на страницу входа, авторизации и поиске отзывов без ответа.
@@ -203,18 +182,10 @@ docker compose down
 docker compose up --build -d
 ```
 
-### Запустить только один сервис
-
-Только GetBit:
+### Запустить только сервис `reply-bot`
 
 ```bash
-docker compose up --build -d getbit-reply-bot
-```
-
-Только BitBuy:
-
-```bash
-docker compose up --build -d bitbuy-reply-bot
+docker compose up --build -d reply-bot
 ```
 
 ---
@@ -229,7 +200,7 @@ docker compose down
 docker compose up --build -d
 ```
 
-Так контейнеры будут пересобраны уже с новой версией кода.
+Так контейнер будет пересобран уже с новой версией кода.
 
 ---
 
@@ -272,7 +243,7 @@ docker compose logs --tail=200
 
 Проверьте:
 
-- правильность `USERNAME_*` и `PASSWORD_*`;
+- правильность `USERNAME` и `PASSWORD`;
 - актуальность `ADMIN_URL`;
 - не изменилась ли форма входа на сайте.
 
@@ -333,12 +304,9 @@ cat > .env <<'EOF'
 ADMIN_URL=https://example.com/admin/login
 REVIEWS_URL=https://example.com/reviews
 HEADLESS=True
-EXCHANGER_NAME_GB=GetBit
-USERNAME_GB=login1
-PASSWORD_GB=password1
-EXCHANGER_NAME_BB=BitBuy
-USERNAME_BB=login2
-PASSWORD_BB=password2
+EXCHANGER_NAME=ex1
+USERNAME=login1
+PASSWORD=password1
 EOF
 docker compose up --build -d
 docker compose logs -f
@@ -350,5 +318,5 @@ docker compose logs -f
 
 - для Docker рекомендуется `HEADLESS=True`;
 - без корректного `.env` контейнеры нормально не запустятся;
-- проект может запускать как один, так и два бота;
+- проект запускает один контейнер `reply-bot`;
 - ответы на отзывы выбираются случайно без повторения, пока не будут использованы все шаблоны.

@@ -1,33 +1,15 @@
 version: '3.8'
 
 services:
-  ex1-reply-bot:
+  reply-bot:
     build: .
-    container_name: ex1-reply-bot
+    container_name: reply-bot
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
-      - EXCHANGER_NAME=${EXCHANGER_NAME_GB}
-      - USERNAME=${USERNAME_GB}
-      - PASSWORD=${PASSWORD_GB}
-      - ADMIN_URL=${ADMIN_URL}
-      - REVIEWS_URL=${REVIEWS_URL}
-      - HEADLESS=${HEADLESS}
-    volumes:
-      - ./config.py:/app/config.py
-      - ./logs:/app/logs
-    networks:
-      - bot-network
-
-  ex2-reply-bot:
-    build: .
-    container_name: ex2-reply-bot
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-      - EXCHANGER_NAME=${EXCHANGER_NAME_BB}
-      - USERNAME=${USERNAME_BB}
-      - PASSWORD=${PASSWORD_BB}
+      - EXCHANGER_NAME=${EXCHANGER_NAME}
+      - USERNAME=${USERNAME}
+      - PASSWORD=${PASSWORD}
       - ADMIN_URL=${ADMIN_URL}
       - REVIEWS_URL=${REVIEWS_URL}
       - HEADLESS=${HEADLESS}
