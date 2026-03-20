@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  getbit-reply-bot:
+  ex1-reply-bot:
     build: .
-    container_name: getbit-reply-bot
+    container_name: ex1-reply-bot
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
@@ -19,9 +19,9 @@ services:
     networks:
       - bot-network
 
-  bitbuy-reply-bot:
+  ex2-reply-bot:
     build: .
-    container_name: bitbuy-reply-bot
+    container_name: ex2-reply-bot
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
